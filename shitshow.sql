@@ -5,6 +5,7 @@ set enable_mergejoin=on;
 
 VACUUM ANALYZE;
 
+--BASE QUERY
 EXPLAIN ANALYZE
 SELECT 
     ed."eduLevel", 
@@ -48,8 +49,9 @@ WHERE
 GROUP BY 
     ed."eduLevel"
 ORDER BY members DESC; 
--- 1s
+-- 984-996-989ms
 
+--With Distinct (alternative of base)
 EXPLAIN ANALYZE
 SELECT 
     ed."eduLevel", 
@@ -86,14 +88,18 @@ WHERE
 GROUP BY 
     ed."eduLevel"
 ORDER BY members DESC; 
--- 860 ms
+-- 848-897-862 ms
 -------------------------
--- Using a btree index on 
 -------------------------
+
 VACUUM ANALYZE;
 
-CREATE INDEX email_ad_ind ON advertisement USING hash(email);
-DROP INDEX email_ad_ind;
+CREATE INDEX email_ad_ind_hash ON advertisement USING hash(email);
+DROP INDEX email_ad_ind_hash;
+
+CREATE INDEX email_ad_ind_btree ON advertisement USING btree(email);
+DROP INDEX email_ad_ind_btree;
+
 
 EXPLAIN ANALYZE
 	SELECT 
@@ -138,4 +144,5 @@ EXPLAIN ANALYZE
 	GROUP BY 
 	    ed."eduLevel"
 	ORDER BY members DESC; 
--- 872 ms (with email_ad_ind only)
+-- 989-1028-1022 ms (with email_ad_ind_hash only)
+-- 997-1035-1076 ms (with email_ad_ind_btree only)
