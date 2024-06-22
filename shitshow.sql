@@ -200,3 +200,59 @@ EXPLAIN ANALYZE
 	GROUP BY 
 	    ed."eduLevel"
 	ORDER BY members DESC; 
+
+-------------------------
+-------------------------
+
+VACUUM ANALYZE;
+
+CREATE INDEX date_sent_hash ON "msg" USING hash("dateSent");
+DROP INDEX date_sent_hash;
+
+CREATE INDEX date_sent_btree ON "msg" USING btree("dateSent");
+DROP INDEX date_sent_btree;
+
+
+EXPLAIN ANALYZE
+	SELECT 
+	    ed."eduLevel", 
+	    COUNT(ed.email) AS members
+	FROM 
+	    education ed
+	JOIN (
+	    SELECT 
+	        ad.email
+	    FROM 
+	        advertisement ad
+	    JOIN 
+	        "jobOffer" jo 
+	    ON 
+	        ad."advertisementID" = jo."advertisementID"
+	    WHERE 
+	        jo."fromAge" > 21 
+	        AND jo."fromAge" < 30
+	        AND AGE(ad."datePosted") <= '6 mons'
+	    GROUP BY 
+	        ad.email
+	    HAVING 
+	        COUNT(ad."advertisementID") >= 2
+	) adp
+	ON 
+	    adp.email = ed.email
+	JOIN (
+	    SELECT 
+	        "receiverEmail" as email
+	    FROM 
+	        msg
+	    WHERE 
+	        AGE(msg."dateSent") <= '6 mons'
+	    GROUP BY 
+	        "receiverEmail"
+	) rp
+	ON 
+	    rp.email = ed.email
+	WHERE 
+	    ed.country = 'Canada'
+	GROUP BY 
+	    ed."eduLevel"
+	ORDER BY members DESC; 
