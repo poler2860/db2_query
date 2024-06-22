@@ -146,3 +146,57 @@ EXPLAIN ANALYZE
 	ORDER BY members DESC; 
 -- 989-1028-1022 ms (with email_ad_ind_hash only)
 -- 997-1035-1076 ms (with email_ad_ind_btree only)
+
+
+VACUUM ANALYZE;
+
+CREATE INDEX from_age_hash ON "jobOffer" USING hash("fromAge");
+DROP INDEX from_age_hash;
+
+CREATE INDEX from_age_btree ON "jobOffer" USING btree("fromAge");
+DROP INDEX from_age_btree;
+
+
+EXPLAIN ANALYZE
+	SELECT 
+	    ed."eduLevel", 
+	    COUNT(ed.email) AS members
+	FROM 
+	    education ed
+	JOIN (
+	    SELECT 
+	        ad.email
+	    FROM 
+	        advertisement ad
+	    JOIN 
+	        "jobOffer" jo 
+	    ON 
+	        ad."advertisementID" = jo."advertisementID"
+	    WHERE 
+	        jo."fromAge" > 21 
+	        AND jo."fromAge" < 30
+	        AND AGE(ad."datePosted") <= '6 mons'
+	    GROUP BY 
+	        ad.email
+	    HAVING 
+	        COUNT(ad."advertisementID") >= 2
+	) adp
+	ON 
+	    adp.email = ed.email
+	JOIN (
+	    SELECT 
+	        "receiverEmail" as email
+	    FROM 
+	        msg
+	    WHERE 
+	        AGE(msg."dateSent") <= '6 mons'
+	    GROUP BY 
+	        "receiverEmail"
+	) rp
+	ON 
+	    rp.email = ed.email
+	WHERE 
+	    ed.country = 'Canada'
+	GROUP BY 
+	    ed."eduLevel"
+	ORDER BY members DESC; 
