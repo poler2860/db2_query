@@ -2,6 +2,8 @@
 set max_parallel_workers_per_gather = 0;
 set enable_hashjoin=on;
 set enable_mergejoin=on;
+set enable_nestloop=on;
+set join_collapse_limit = 8;
 
 VACUUM ANALYZE;
 
